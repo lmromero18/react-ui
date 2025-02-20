@@ -1,49 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoginService } from "../login/login-service";
+import { useModelBinding } from "../crud-maker/model/use-model-binding";
+import { useState } from "react";
 
 export function LoginForm() {
-  const [model] = useState(new LoginService()); // ✅ Estado para el modelo (se mantiene entre renders)
+  const { formData, handleChange, model, errors, isValid, values, touched, setTouched } = useModelBinding(new LoginService());
   const router = useRouter();
-  const [formData, setFormData] = useState(() =>
-    Object.fromEntries(model.attributes.map((attr) => [attr.name, attr.input?.value || ""]))
-  );
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    // ✅ Sincroniza valores entre `formData` y el modelo después del primer render
-    model.attributes.forEach((attr) => {
-      model.setAttributeValue(attr.name, formData[attr.name] || "");
-    });
-  }, [formData]);
-
-  // ⚡ Maneja cambios en los inputs y actualiza el modelo
-  const handleChange = (name: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    model.setAttributeValue(name, value); // ✅ Asegura que el modelo también se actualiza
-  };
-
-  // 🛠 Manejo del envío del formulario
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
+    if (!isValid) {
+      setError("Por favor, corrige los errores antes de continuar.");
+      return;
+    }
+
     try {
-      const email = model.getAttribute("email")?.input?.value; // 🔹 "username" en lugar de "email"
-      const password = model.getAttribute("password")?.input?.value;
-
-      console.log("📩 Enviando credenciales:", { email, password });
-
       const result = await signIn("credentials", {
         redirect: false,
-        email,
-        password,
+        ...values,
         callbackUrl: "/dashboard",
       });
 
@@ -73,11 +56,16 @@ export function LoginForm() {
               value={formData[attr.name] || ""}
               onChange={(e) => handleChange(attr.name, e.target.value)}
               required={attr.input?.required}
+              onInput={(e) => handleChange(attr.name, e.currentTarget.value)}
+              onBlur={() => setTouched((prev) => ({ ...prev, [attr.name]: true }))}
             />
+            {touched[attr.name] && errors[attr.name] && (
+              <p className="text-red-500 text-sm">{errors[attr.name]}</p>
+            )}
           </div>
         ))}
 
-        <Button type="submit" className="w-full" disabled={model.loading}>
+        <Button type="submit" className="w-full" disabled={!isValid || model.loading}>
           Iniciar sesión
         </Button>
       </form>

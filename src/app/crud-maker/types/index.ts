@@ -21,28 +21,7 @@ export type FormInputData = {
   options?: SelectOption | SelectOptionsData[];
   change?: (value: any) => void;
   getter?: (value: any) => any;
-  setter?: (value: any) => any;
-  decimals?: number;
-  seconds?: number;
-  hourStep?: number;
-  minuteStep?: number;
-  meridian?: boolean;
-  directive?: AvailableDirectives;
-  addTag?: boolean;
-  dateType?: string;
-  data?: any[];
-  bindLabel?: string;
-  bindValue?: string;
-  info?: Info;
-  step?: number;
-  prefixIcon?: string;
-  onRemoveFileCallBack?: (file: any) => void;
-  onSuccessCallBack?: (response: any) => void;
-  handleUpload?: (file: any) => void;
-  groupBy?: string;
-  disabledDate?: (date: Date) => boolean;
-  nullable?: boolean;
-  fileTypes?: string[];
+  setter?: (value: any) => any; 
 };
 
 export type SelectOptionsData = {

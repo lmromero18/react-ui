@@ -1,21 +1,11 @@
 import { useState } from "react";
-import { FormInputData, SelectOptionsData } from "../types";
+import { SelectOptionsData } from "../types";
 import { SelectOption } from "./select_option";
-
-export function useFormControl(initialValue: any) {
-  const [value, setValue] = useState(initialValue);
-
-  const updateValue = (newValue: any) => {
-    setValue(newValue);
-  };
-
-  return { value, setValue: updateValue };
-}
 
 export class FormInput {
   public placeholder?: string;
-  public name?: string;
-  public type: any;
+  public name!: string;
+  public type: string = "text";
   public class?: string;
   public accept?: string;
   public container_class?: string;
@@ -24,34 +14,34 @@ export class FormInput {
   public readonly?: boolean = false;
   public min?: number;
   public max?: number;
-  public rawValue?: any;
   public multiple?: boolean;
+  public step?: number = 0;
   public selectOptions!: SelectOption | SelectOptionsData[];
   public validations?: ((value: any) => boolean | string)[] = [];
-  public validateFilter:boolean = false;
+  public validateFilter: boolean = false;
   public change?: (value: any) => void;
   public getter?: (value: any) => any;
   public setter?: (value: any) => any;
-  public step?: number = 0;
-  public formControl: ReturnType<typeof useFormControl>;
+  public form_order!: number;
 
-  constructor(data: FormInputData) {
-    Object.assign(this, data);
+  private _value: any;
+  private setValue!: (value: any) => void;
 
-    // ✅ Inicializa el formControl con `useState`
-    this.formControl = useFormControl(this.value ?? "");
+  constructor(initialValue: any = "") {
+    const [value, updateValue] = useState(initialValue);
+    this._value = value;
+    this.setValue = updateValue;
+  }
+
+  public get value() {
+    return this._value;
   }
 
   public set value(data: any) {
     this.initValue(data);
-
-    if (this.change) {
-      this.change(data);
-    }
-  }
-
-  public get value() {
-    return this.formControl.value;
+    if (this.change) this.change(data);
+    if (this.setter) data = this.setter(data);
+    this._value = data;
   }
 
   public initValue(data: any) {
@@ -59,12 +49,15 @@ export class FormInput {
       data = null;
     }
 
-    this.rawValue = data;
-
     if (this.getter) {
       data = this.getter(data);
     }
 
-    this.formControl.setValue(data);
+    this._value = data;
+    this.setValue(data);
+  }
+
+  public getName(): string {
+    return this.name;
   }
 }

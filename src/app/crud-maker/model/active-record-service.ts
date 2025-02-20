@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from "axios";
 import { Attribute } from "./attribute";
+import { FormInput } from "./input";
 
 interface Pagination {
   total: number;
@@ -8,7 +9,7 @@ interface Pagination {
 }
 
 export class ActiveRecordService<T = any> {
-  private api: AxiosInstance;
+  public api!: AxiosInstance;
   public endpoint?: string;
   public items: Array<T & { id: number | string }> = [];
   public pagination: Pagination = { total: 0, current_page: 1, per_page: 10 };
@@ -17,15 +18,34 @@ export class ActiveRecordService<T = any> {
   public attributes: Attribute[] = [];
   public isShow = false;
   public primaryKey = "id";
+  public isNew = true;
 
-  constructor(endpoint: string, baseURL: string = "/api") {
-    this.endpoint = endpoint;
-    this.api = axios.create({ baseURL });
+  // constructor(endpoint: string, baseURL: string = "/api") {
+  //   this.endpoint = endpoint;
+  //   this.api = axios.create({ baseURL });
+  // }
+
+  constructor() {
+    this.initAttributes();
+  }
+
+  initAttributes() {
+    this.attributes.forEach((attr) => {
+      if (attr.input) {
+        attr.input.value = attr.input.value || "";
+      }
+    });
+  }
+
+  getFormData() {
+    return Object.fromEntries(
+      this.attributes.map((attr) => [attr.name, attr.input?.value || ""])
+    );
   }
 
   getUrl(): string {
     let baseUrl: string | undefined;
-  
+
     switch (this.urlType) {
       case "auth":
         baseUrl = process.env.NEXT_PUBLIC_URL_AUTH;
@@ -40,16 +60,93 @@ export class ActiveRecordService<T = any> {
     return this.attributes.find((attr) => attr.name === name);
   }
 
-  setAttributeValue(name: string, value: any) {
-    let attr = this.attributes.find((item) => item.name === name);
-    if (attr) {
-      attr.rawValue = value;
-      if (attr.input) {
-        attr.input.value = value;
+  // setAttributeValue(name: string, value: any) {
+  //   let attr = this.getAttribute(name);
+
+  //   let newValue = value;
+
+  //   if (attr) {
+      
+  //     if (attr.input) {
+  //       attr.input.value = value;
+        
+  //       if (typeof attr.input.change === "function") {
+  //         attr.input.change(value);
+  //       }
+        
+  //       if (typeof attr.input.setter === "function") {
+  //         if (![false, null, undefined, "null", "undefined", ""].includes(value)) {
+  //           newValue = attr.input.setter(value);
+  //         }
+  //       }
+        
+  //       if (typeof attr.input.getter === "function") {
+          
+  //         if (![false, null, undefined, "null", "undefined", ""].includes(value)) {
+  //           newValue = attr.input.getter(value);
+  //         }
+  //       }
+
+  //       attr.input.value = newValue;
+
+  //     }
+
+  //     attr.rawValue = newValue ;
+      
+  //   }
+  // }
+
+  public creatables() {
+    return this.attributes.filter((item: any) => item.creatable && item.input);
+  }
+
+  public updatables() {
+    return this.attributes.filter((item: any) => item.updatable && item.input);
+  }
+
+  public getFormAttributes() {
+    /*
+    if (all) {
+      return this.showable();
+    }
+    */
+
+    if (this.isNew) {
+      return this.creatables();
+    }
+
+    return this.updatables();
+  }
+
+  public getFormInputs(): FormInput[] {
+    return this.getFormAttributes()
+      .sort((a, b) => (a.form_order ?? 0) - (b.form_order ?? 0))
+      .map((item: any) => item.input);
+  }
+
+
+  public getValues() {
+    let result: { [key: string]: any } = {};
+    
+    for (const input of this.getFormInputs()) {
+      if (!input.disabled) {        
+        result[input.name] = input.setter ? input.setter(input.value) : input.value;
       }
     }
-  } 
-  
+
+    return result;
+  }
+
+  public getAttributeValue(name: string, value: any) {
+    let attr = this.getAttribute(name);
+    let input = attr?.input;
+
+    if (attr && input) {
+      return input.setter ? input.setter(value) : value;
+    }
+
+    return null;
+  }
 
   async findAll(): Promise<void> {
     this.loading = true;
@@ -68,7 +165,7 @@ export class ActiveRecordService<T = any> {
     }
   }
 
-  async show(id: any, after?:CallableFunction, err?: CallableFunction): Promise<T | null> {
+  async show(id: any, after?: CallableFunction, err?: CallableFunction): Promise<T | null> {
     this.loading = true;
     try {
       const { data } = await this.api.get(`/${this.getUrl()}/${id}`);
@@ -79,9 +176,9 @@ export class ActiveRecordService<T = any> {
 
       return data;
     } catch (error) {
-        if (err) {
-          err(error);
-        }
+      if (err) {
+        err(error);
+      }
       return null;
     } finally {
       this.loading = false;

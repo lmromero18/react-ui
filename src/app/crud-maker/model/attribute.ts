@@ -13,6 +13,9 @@ export class Attribute {
   public sortable = true;
   public primaryKey?: boolean;
   public rawValue: any;
+  public form_order?: number;
+  public creatable = true;
+  public updatable = true;
 
   constructor(data: AttributeData) {
     this.name = data.name;
@@ -23,6 +26,12 @@ export class Attribute {
     this.filtrable = data.filtrable ?? false;
     this.sortable = data.sortable ?? true;
     this.rawValue = data.value;
+    this.form_order =
+      typeof data.form_order === 'number' ? data.form_order : Infinity;
+    this.creatable =
+      typeof data.creatable === 'boolean' ? data.creatable : this.creatable ?? true;
+    this.updatable =
+      typeof data.updatable === 'boolean' ? data.updatable : this.updatable;
 
     if (data.input) {
       this.setInput(data.input);
@@ -41,6 +50,10 @@ export class Attribute {
       multiple: inputData.multiple ?? false,
       disabled: inputData.disabled ?? false,
       selectOptions: this.normalizeOptions(inputData.options),
+      change: inputData.change,
+      getter: inputData.getter,
+      setter: inputData.setter,
+      value: this.rawValue,
     };
   }
 
