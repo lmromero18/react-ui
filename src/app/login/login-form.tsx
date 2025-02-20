@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LoginService } from "../login/login-service";
+import { LoginService } from "./login-service";
 import { useModelBinding } from "../crud-maker/model/use-model-binding";
 import { useState } from "react";
 

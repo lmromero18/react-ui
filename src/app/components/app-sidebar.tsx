@@ -21,6 +21,7 @@ import {
 import { menuItems } from "@/lib/menu-items";
 import { ChevronUp, User2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { signOut } from "next-auth/react";
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -141,7 +142,7 @@ export function AppSidebar() {
                     <DropdownMenuItem>
                       <span>Billing</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
                       <span>Sign out</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
